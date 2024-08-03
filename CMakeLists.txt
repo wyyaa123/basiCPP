@@ -1,60 +1,39 @@
 cmake_minimum_required(VERSION 3.10)
 project(some_project)
 
-set(LIBRARY_NAME some_project_lib)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_BUILD_TYPE Debug)
 
-################################################################################
-# Dependencies
-################################################################################
-
-################################################################################
-# Sources
-################################################################################
-
-set(root ${CMAKE_CURRENT_SOURCE_DIR})
-
-set(HEADER_FILES
-        ${root}/src/package_1/simple.h
-)
-
-set(SOURCE_FILES
-        ${root}/src/package_1/simple.cpp
-)
-
-# Organize the source and header files into groups
-source_group("Headers" FILES ${HEADER_FILES})
-source_group("Source" FILES ${SOURCE_FILES})
-
-if(CMAKE_VERSION VERSION_GREATER 3.8)
-    source_group(TREE ${root} FILES ${HEADER_FILES} ${SOURCE_FILES})
-endif()
-
-################################################################################
-# Build
-################################################################################
+find_package(OpenCV REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(glfw3 REQUIRED)
+find_package(spdlog REQUIRED)
 
 include_directories(
-        ${CMAKE_CURRENT_BINARY_DIR}
-        ${CMAKE_BINARY_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${EIGEN3_INCLUDE_DIR} 
+    ${PROJECT_SOURCE_DIR}/include 
+    ${PROJECT_SOURCE_DIR}/utils 
+    ${Boost_INCLUDE_DIRS} 
+    ${GLFW_INCLUDE_DIRS} 
+    ${OpenCV_INCLUDE_DIRS} 
+    ${OpenGL_INCLUDE_DIRS}
 )
 
-add_library(${LIBRARY_NAME} SHARED
-        ${SOURCE_FILES}
-        ${HEADER_FILES}
-)
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
-target_link_libraries(${LIBRARY_NAME}
-)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
+add_library(utils SHARED utils/trans.cpp utils/logger.cpp)
+target_link_libraries(utils PUBLIC ${Eigen3_LIBRARIES} spdlog::spdlog)
 
-################################################################################
-# Executables
-################################################################################
+add_library(viewer SHARED include/gviewer.cpp include/visualization.cpp)
+target_link_libraries(viewer PUBLIC ${OpenCV_LIBRARIES} ${OPENGL_LIBRARIES} glfw utils)
 
-add_executable(some_project_bin src/main.cpp)
-target_link_libraries(some_project_bin
-        PUBLIC
-            ${LIBRARY_NAME}
-        )
+add_executable(main src/main.cpp)
+target_link_libraries(main viewer)
+
+add_executable(fit src/fit.cpp)
+target_link_libraries(fit viewer)
